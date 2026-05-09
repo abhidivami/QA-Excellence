@@ -1,7 +1,6 @@
 # Clarifying Questions for Vendor Invoice Management Portal
 
 **Project:** B2B Vendor Invoice Management Portal  
-**Prepared by:** QA Team  
 **Date:** 2026-05-09  
 **Purpose:** To identify ambiguities in the client requirements before testing begins, ensuring all edge cases are understood and acceptance criteria are clearly defined.
 

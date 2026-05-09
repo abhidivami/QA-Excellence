@@ -2,7 +2,6 @@
 
 **Project:** B2B Vendor Invoice Management Portal  
 **Version:** 1.0  
-**Prepared by:** QA Team  
 **Date:** 2026-05-09
 
 ---

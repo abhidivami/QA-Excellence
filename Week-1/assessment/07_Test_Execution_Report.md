@@ -3,7 +3,6 @@
 **Project:** B2B Vendor Invoice Management Portal  
 **Test Cycle:** Cycle 1 — Functional Testing  
 **Version:** 1.0  
-**Prepared by:** QA Team  
 **Reporting Period:** 2026-05-09 to 2026-05-23  
 **Status:** Draft (Template with sample data)
 

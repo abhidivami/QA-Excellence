@@ -1,7 +1,6 @@
 # Sample Bug Reports — Vendor Invoice Management Portal
 
 **Project:** B2B Vendor Invoice Management Portal  
-**Prepared by:** QA Team  
 **Date:** 2026-05-09
 
 ---
