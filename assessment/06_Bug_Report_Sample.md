@@ -199,6 +199,47 @@ Finance and management decisions made on this report will be based on incorrect 
 
 ---
 
+## Bug Report 6
+
+| Field | Details |
+| --- | --- |
+| **Bug ID** | BUG-006 |
+| **Title** | No lockout message shown after 5 consecutive failed login attempts |
+| **Requirement** | REQ-01 |
+| **Related Test Case** | TC-007 |
+| **Reported By** | QA Engineer |
+| **Date Reported** | 2026-05-09 |
+| **Environment** | Staging — Chrome 124, Windows 11 |
+| **Severity** | Medium |
+| **Priority** | P2 — Fix in this sprint |
+| **Reproducibility** | Always — account is locked (confirmed by inability to log in with correct credentials), but the lockout message does not appear. Reproduced 3 times with 3 different vendor accounts. |
+| **Status** | Open |
+
+**Steps to Reproduce:**
+
+1. Log in to the portal with a valid vendor email (`vendor1@acme.com`)
+2. Enter the wrong password (`BadPass99!`) 5 times in a row
+3. On the 5th failed attempt, observe the message shown on screen
+
+**Expected Result:**
+After the 5th failed attempt, a clear message is displayed: "Your account has been locked due to too many failed login attempts. Please check your email to reset access."
+
+**Actual Result:**
+After the 5th failed attempt, the same generic error is shown: "Invalid email or password." No indication that the account is now locked. The user is left confused and unaware of the lockout state.
+
+**Verification of Lock (separate step):**
+Attempting to log in with the correct password (`Acme@12345`) after the 5th failure also fails silently — confirming the account IS locked, but the system is not communicating this to the user.
+
+**Impact:**
+Users have no way to understand why they cannot log in. They will continue retrying, waste time, and likely call support. Poor user experience and a support overhead risk.
+
+**Attachments:**
+
+- Screenshot: lockout_no_message_attempt5.png
+- Screenshot: lockout_confirmed_correct_password_fails.png
+
+---
+
 ## Bug Severity Guide (Reference)
 
 | Severity | Definition | Example |

@@ -150,7 +150,7 @@ The QA team will begin test execution only when all of the following conditions 
 
 ---
 
-## 9. Exit Criteria
+## 10. Exit Criteria
 
 Testing will be considered complete when:
 
@@ -163,7 +163,7 @@ Testing will be considered complete when:
 
 ---
 
-## 10. Suspension Criteria
+## 11. Suspension Criteria
 
 Testing will be paused if:
 
@@ -175,7 +175,7 @@ Testing will resume once the blocking issue is resolved and confirmed by the QA 
 
 ---
 
-## 11. Deliverables
+## 12. Deliverables
 
 | Deliverable | Owner | When |
 | --- | --- | --- |
@@ -189,7 +189,7 @@ Testing will resume once the blocking issue is resolved and confirmed by the QA 
 
 ---
 
-## 12. Risks
+## 13. Project Risks
 
 | Risk | Likelihood | Impact | Mitigation |
 | --- | --- | --- | --- |
@@ -198,6 +198,24 @@ Testing will resume once the blocking issue is resolved and confirmed by the QA 
 | Environment instability | Medium | High | Have a rollback plan; schedule testing with DevOps |
 | Team member unavailability | Low | Medium | Cross-train QA engineers on all feature areas |
 | Scope creep (new features added mid-cycle) | Medium | Medium | Freeze scope before test execution; manage via change control |
+
+---
+
+## 14. Hidden Risks
+
+These are risks that are not obvious from reading the requirements but could cause serious problems in production if not tested. They were identified during requirements analysis.
+
+| # | Hidden Risk | Why It Is Not Obvious | How to Test For It |
+| --- | --- | --- | --- |
+| HR-01 | **Duplicate Payment** — The same invoice could be approved and forwarded for payment more than once if there is no system-level guard. | REQ-04 says "forward for payment" but does not say "only once". | TC-031 — attempt to approve and forward the same invoice twice. |
+| HR-02 | **Unauthenticated Access via Direct URL** — A user who knows the URL structure could bypass the login page and access vendor or AP data directly. | REQ-07 mentions "authorized users only" but most teams only test the login page, not direct URL access. | TC-062 — navigate to protected pages without a session token. |
+| HR-03 | **PO Over-billing** — A vendor could submit multiple invoices against the same PO over time, eventually billing more than the PO's total value. | REQ-02 says "submit invoices against purchase orders" but does not mention a cap. | TC-015, TC-081 — submit invoices that exceed the remaining PO balance. |
+| HR-04 | **Malicious File Upload** — The file upload field could accept executable files (.exe, .sh, .bat), allowing harmful code to be stored on the server. | REQ-02 only says "upload invoices" — no mention of file type restrictions. | TC-012 — upload non-invoice file types. |
+| HR-05 | **Data Leakage Between Vendors** — Vendor A could potentially view Vendor B's invoices if role-based filtering is not applied at the API level (only at the UI level). | REQ-07 mentions access control but teams often only test the UI, not the API directly. | TC-060 — call the invoice list API with Vendor A's token but request Vendor B's invoice ID. |
+| HR-06 | **Email Notification Failure Silently Skipped** — If the email service is down, the system could approve or reject an invoice without notifying anyone, leaving both parties unaware of the status change. | REQ-05 says "receive notifications" but does not specify what happens if delivery fails. | TC-112 — disable the email service and verify that failures are logged and retried. |
+| HR-07 | **Report Data Manipulation After the Fact** — If an invoice is deleted or backdated after a monthly report is generated, the report may no longer reflect accurate historical data. | REQ-06 says "generate monthly reports" but does not specify whether reports are snapshots or live queries. | TC-051 — cross-check report data against database records after a deletion. |
+| HR-08 | **Session Fixation Attack** — After login, if the session token does not change, an attacker who captured the pre-login token could hijack the session. | REQ-01 mentions login but not session security internals. | Verify that the session token changes upon successful login (check browser dev tools). |
+| HR-09 | **Concurrent Invoice Submission Race Condition** — If two users submit the same invoice number at exactly the same moment, both could succeed if the uniqueness check is not atomic at the database level. | REQ-02 mentions duplicate detection but not concurrency. | Simulate two simultaneous API calls with the same invoice number and check the database for duplicates. |
 
 ---
 

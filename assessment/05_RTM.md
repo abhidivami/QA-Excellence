@@ -47,6 +47,10 @@ The RTM links every client requirement to one or more test scenarios and test ca
 | REQ-05 | Both parties receive email notifications on status changes | AP team email on new invoice submission | TC-043 | Not Executed | — |
 | REQ-06 | The system generates monthly invoice activity reports | Admin generates a monthly report | TC-050 | Not Executed | — |
 | REQ-06 | The system generates monthly invoice activity reports | Report data matches actual records | TC-051 | Not Executed | — |
+| REQ-06, REQ-07 | Monthly reports + access control | Vendor sees only their own data in the report | TC-052 | Not Executed | — |
+| REQ-06 | The system generates monthly invoice activity reports | Report exported in PDF and Excel format | TC-053 | Not Executed | — |
+| REQ-06 | The system generates monthly invoice activity reports | Report for a month with zero activity | TC-054 | Not Executed | — |
+| REQ-06 | The system generates monthly invoice activity reports | Historical report not silently altered after deletion | TC-055 | Not Executed | — |
 | REQ-07 | Only authorized users may access the system | Vendor blocked from AP invoice queue | TC-060 | Not Executed | — |
 | REQ-07 | Only authorized users may access the system | AP member blocked from admin settings | TC-061 | Not Executed | — |
 | REQ-07 | Only authorized users may access the system | Unauthenticated user blocked from all pages | TC-062 | Not Executed | — |
@@ -79,10 +83,10 @@ The RTM links every client requirement to one or more test scenarios and test ca
 | REQ-03 | 7 | 0 | 0 | 0 | 7 |
 | REQ-04 | 3 | 0 | 0 | 0 | 3 |
 | REQ-05 | 6 | 0 | 0 | 0 | 6 |
-| REQ-06 | 2 | 0 | 0 | 0 | 2 |
+| REQ-06 | 6 | 0 | 0 | 0 | 6 |
 | REQ-07 | 8 | 0 | 0 | 0 | 8 |
-| Cross-cutting (Non-Functional + Integration) | 6 | 0 | 0 | 0 | 6 |
-| **Total** | **47** | **0** | **0** | **0** | **47** |
+| Cross-cutting (Non-Functional + Integration) | 7 | 0 | 0 | 0 | 7 |
+| **Total** | **51** | **0** | **0** | **0** | **51** |
 
 *Note: Some test cases cover multiple requirements and are counted once in the most relevant category above.*
 
@@ -91,6 +95,6 @@ The RTM links every client requirement to one or more test scenarios and test ca
 ## Notes
 
 - All 7 client requirements are covered across functional, boundary value, state transition, non-functional, and integration test cases.
-- Total: 47 test cases — 25 functional, 3 BVA, 4 state transition, 4 non-functional, 3 integration, 6 security/RBAC, 2 reporting.
+- Total: 51 test cases — 30 functional, 3 BVA, 4 state transition, 4 non-functional, 3 integration, 6 security/RBAC, 6 reporting (TC-050 to TC-055) — cross-cutting test cases (TC-052, TC-110 to TC-112) counted once in the most relevant category.
 - The "Pass / Fail" and "Executed" columns will be updated in real-time during test execution.
 - This RTM is the single source of truth for test coverage reporting to the client.

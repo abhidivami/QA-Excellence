@@ -234,10 +234,10 @@
 | Requirement | REQ-02 |
 | Priority | Critical |
 | Type | Negative |
-| Preconditions | Invoice INV-2026-001 has already been submitted for PO-1001. |
-| Test Data | Invoice No: INV-2026-001 (same as a previously submitted invoice) |
-| Steps | 1. Log in as a vendor. 2. Submit an invoice with the same invoice number as an existing one. |
-| Expected Result | Submission is blocked. Error: "An invoice with number INV-2026-001 has already been submitted." |
+| Preconditions | `vendor1@acme.com` is logged in. Invoice `INV-2026-001` has already been submitted by `vendor1@acme.com` against `PO-1001` and is currently in "Pending Review" status. |
+| Test Data | Invoice No (duplicate): `INV-2026-001`, PO No: `PO-1001`, Amount: ₹30,000, File: `invoice_dup.pdf` (1 MB) |
+| Steps | 1. Log in as `vendor1@acme.com`. 2. Click "Submit Invoice". 3. Enter Invoice No `INV-2026-001`, PO No `PO-1001`, Amount ₹30,000. 4. Upload `invoice_dup.pdf`. 5. Click "Submit". |
+| Expected Result | Submission is blocked before reaching the server. Error message shown: "An invoice with number INV-2026-001 has already been submitted." No new invoice record is created in the database. |
 | Actual Result | — |
 | Status | Not Executed |
 
@@ -484,6 +484,72 @@
 | Test Data | April 2026 data |
 | Steps | 1. Generate the April 2026 report. 2. Cross-check the counts against the actual invoice records in the system. |
 | Expected Result | Report shows: Submitted: 10, Approved: 7, Rejected: 2, Pending: 1. All amounts match the database records. |
+| Actual Result | — |
+| Status | Not Executed |
+
+### Scenario 7.3 — Vendor can only view their own invoice data in the report
+
+| Field | Details |
+| --- | --- |
+| Test Case ID | TC-052 |
+| Requirement | REQ-06, REQ-07 |
+| Priority | High |
+| Type | Negative |
+| Preconditions | Two vendor accounts exist: `vendor1@acme.com` and `vendor2@acme.com`. Each has submitted invoices in April 2026. Admin has generated the April 2026 report. |
+| Test Data | Vendor 1 invoices: 3 submitted. Vendor 2 invoices: 5 submitted. |
+| Steps | 1. Log in as `vendor1@acme.com`. 2. Navigate to the "Reports" section. 3. View the April 2026 report. |
+| Expected Result | Vendor 1 sees only their own 3 invoices in the report. Vendor 2's invoice count and amounts are not visible. |
+| Actual Result | — |
+| Status | Not Executed |
+
+---
+
+### Scenario 7.4 — Report can be exported in the expected format
+
+| Field | Details |
+| --- | --- |
+| Test Case ID | TC-053 |
+| Requirement | REQ-06 |
+| Priority | Medium |
+| Type | Positive |
+| Preconditions | Admin is logged in. April 2026 report has been generated. Export formats confirmed via CQ#4. |
+| Test Data | Export formats: PDF and Excel. April 2026: 10 invoices (7 approved, 2 rejected, 1 pending). |
+| Steps | 1. Log in as Admin. 2. Generate the April 2026 report. 3. Click "Export as PDF" and open the downloaded file. 4. Verify the data in the PDF matches the on-screen report. 5. Repeat with "Export as Excel". 6. Verify the Excel file has correct column headers and matching data rows. |
+| Expected Result | PDF exports successfully and all data is readable and accurate. Excel file opens correctly with correct headers and row data. Both exported files match the on-screen report exactly. |
+| Actual Result | — |
+| Status | Not Executed |
+
+---
+
+### Scenario 7.5 — Report for a month with zero invoice activity
+
+| Field | Details |
+| --- | --- |
+| Test Case ID | TC-054 |
+| Requirement | REQ-06 |
+| Priority | Medium |
+| Type | Negative |
+| Preconditions | Admin is logged in. No invoices of any status exist for February 2026. |
+| Test Data | Month: February 2026 |
+| Steps | 1. Log in as Admin. 2. Go to "Reports". 3. Select "February 2026". 4. Click "Generate Report". |
+| Expected Result | Report is generated without error. All counts display as 0: Submitted: 0, Approved: 0, Rejected: 0, Pending: 0, Total Amount: ₹0. A message is shown: "No invoice activity for the selected period." |
+| Actual Result | — |
+| Status | Not Executed |
+
+---
+
+### Scenario 7.6 — Historical report data is not silently altered after a deletion
+
+| Field | Details |
+| --- | --- |
+| Test Case ID | TC-055 |
+| Requirement | REQ-06 |
+| Priority | High |
+| Type | Negative |
+| Preconditions | Admin is logged in. April 2026 report was previously generated showing 10 approved invoices. One invoice from April 2026 (`INV-2026-005`) is now deleted by an Admin. |
+| Test Data | Pre-deletion report count: Approved = 10. Deleted invoice: `INV-2026-005` (₹15,000). |
+| Steps | 1. Record the April 2026 report data: Approved = 10. 2. Admin deletes `INV-2026-005` from the system. 3. Re-open or regenerate the April 2026 report. 4. Compare the approved count and total amount. |
+| Expected Result | The report either (a) retains the original count of 10 as a saved snapshot, OR (b) updates to 9 with an audit note explaining the deletion. It must NOT silently change to 9 without any indication. Behaviour must be consistent with the system design decision and documented. |
 | Actual Result | — |
 | Status | Not Executed |
 
@@ -768,10 +834,10 @@
 | Requirement | All (system-wide) |
 | Priority | Medium |
 | Type | Non-Functional |
-| Preconditions | Portal is accessible on Chrome. No mouse will be used during this test. |
-| Test Data | Keyboard controls: Tab (move forward), Shift+Tab (move back), Enter (activate), Space (toggle checkboxes). |
-| Steps | 1. Open the portal login page. 2. Using only the keyboard, tab through all fields, fill in credentials, and press Enter to log in. 3. Tab to "Submit Invoice", fill in all fields using keyboard only, and submit. 4. Verify that focus is visible on every interactive element throughout. |
-| Expected Result | Every form field, button, and link is reachable via Tab key. Focus indicator is visible at all times. Invoice is submitted successfully without using a mouse. No element is skipped or unreachable. |
+| Preconditions | Portal is accessible on Chrome (latest). No mouse or trackpad will be used during this test. A test vendor account `vendor2@acme.com` / `Acme@12345` is active. |
+| Test Data | Keyboard controls: Tab (next field), Shift+Tab (previous field), Enter (submit/activate button), Space (toggle checkboxes/dropdowns). Invoice details: No: `INV-2026-030`, PO: `PO-1001`, Amount: ₹10,000, File: `invoice_kb.pdf`. |
+| Steps | 1. Open the portal login page using keyboard only. 2. Press Tab to reach the email field → type `vendor2@acme.com`. 3. Press Tab to reach the password field → type `Acme@12345`. 4. Press Tab to reach the Login button → press Enter. 5. Verify the vendor dashboard loads and focus is on the first interactive element. 6. Press Tab to reach the "Submit Invoice" navigation item → press Enter. 7. Tab through each field: Invoice No, PO No, Amount, Invoice Date — fill each one. 8. Tab to the file upload button → press Enter → select `invoice_kb.pdf` using the keyboard file picker. 9. Tab to the "Submit" button → press Enter. 10. Verify the confirmation message is focused and readable. |
+| Expected Result | Every field and button on the login and invoice submission pages is reachable by Tab. A visible focus ring (outline) appears on every active element. The invoice is submitted successfully without touching the mouse. No interactive element is skipped or impossible to reach via keyboard. |
 | Actual Result | — |
 | Status | Not Executed |
 
@@ -785,10 +851,10 @@
 | Requirement | REQ-01, REQ-02 |
 | Priority | Medium |
 | Type | Non-Functional |
-| Preconditions | A person unfamiliar with the portal is available to test. They are given no training or manual in advance. |
-| Test Data | Task: "Register an account and submit one invoice against PO-1001." Time limit: 10 minutes. |
-| Steps | 1. Ask the user to register a new vendor account without guidance. 2. Ask the user to submit an invoice against PO-1001. 3. Record time taken, errors made, and any points of confusion. |
-| Expected Result | User completes registration in under 3 minutes. User completes invoice submission in under 5 minutes. No task requires more than 2 attempts. Error messages encountered are clear and helpful. |
+| Preconditions | A QA observer is present with a stopwatch and a notes document. A first-time user (no prior portal knowledge) is seated at the test machine. The portal login page is open. PO-1002 exists in the system with a ₹50,000 balance. A sample invoice file `invoice_usability.pdf` is on the desktop. |
+| Test Data | Task 1: "Please create a new vendor account." Task 2: "Please submit an invoice for ₹20,000 against PO-1002 using the file on the desktop." No additional guidance is given. |
+| Steps | 1. Observer starts the stopwatch. 2. User attempts Task 1 (registration) independently. Observer notes: time taken, number of errors, any field they could not understand, any error message that confused them. 3. Observer records Task 1 completion time. 4. Observer restarts stopwatch. 5. User attempts Task 2 (invoice submission) independently. Observer notes: time taken, number of failed attempts, any UI elements they could not locate. 6. Observer records Task 2 completion time. 7. Observer asks the user: "Was anything confusing? What would you change?" and notes responses. |
+| Expected Result | Task 1 (registration) completed in under 3 minutes with no more than 1 error. Task 2 (invoice submission) completed in under 5 minutes with no more than 1 failed attempt. All error messages encountered are understandable without technical knowledge. User does not need to ask for help to complete either task. |
 | Actual Result | — |
 | Status | Not Executed |
 
@@ -849,7 +915,7 @@
 
 ---
 
-*Total Test Cases in this document: 46*
+*Total Test Cases in this document: 51*
 
 | Module | TC Range | Count |
 | --- | --- | --- |
@@ -859,11 +925,11 @@
 | AP Approval Workflow | TC-020 to TC-024 | 5 |
 | Payment Forwarding | TC-030 to TC-031 | 2 |
 | Email Notifications | TC-040 to TC-043 | 4 |
-| Monthly Reports | TC-050 to TC-051 | 2 |
+| Monthly Reports | TC-050 to TC-055 | 6 |
 | Role-Based Access Control | TC-060 to TC-063 | 4 |
 | Security | TC-070 to TC-071 | 2 |
 | Boundary Value Analysis | TC-080 to TC-082 | 3 |
 | State Transition | TC-090 to TC-093 | 4 |
 | Non-Functional | TC-100 to TC-103 | 4 |
 | Integration | TC-110 to TC-112 | 3 |
-| **Total** | | **47** |
+| **Total** | | **51** |
