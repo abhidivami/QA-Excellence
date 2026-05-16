@@ -1,0 +1,319 @@
+[0mnewman[0m
+
+[0mPetstore API — Production Grade Tests[0m
+
+❏ [0m0 — Smoke Tests[0m
+↳ [0mTC-S-001 — Server is reachable[0m
+  [90mGET[39m [90mhttps://petstore.swagger.io/v2/pet/1[39m [90m[200 OK, 464B, 1290ms][39m
+[32m  ✓ [39m [90mServer is reachable — not a 5xx crash[39m
+[32m  ✓ [39m [90mResponse time under 3000ms[39m
+
+↳ [0mTC-S-002 — Response is JSON not HTML[0m
+  [90mGET[39m [90mhttps://petstore.swagger.io/v2/pet/1[39m [90m[200 OK, 464B, 279ms][39m
+[32m  ✓ [39m [90mContent-Type contains application/json[39m
+[32m  ✓ [39m [90mResponse body is valid parseable JSON[39m
+
+❏ [0m1 — Pet Module[0m
+↳ [0mTC-P-001 — POST /pet — Create pet (happy path)[0m
+  [90mPOST[39m [90mhttps://petstore.swagger.io/v2/pet[39m [90m[200 OK, 492B, 299ms][39m
+[32m  ✓ [39m [90mStatus is 200[39m
+[32m  ✓ [39m [90mPet name matches request[39m
+[32m  ✓ [39m [90mStatus field is available[39m
+[32m  ✓ [39m [90mid is a number not a string[39m
+[32m  ✓ [39m [90mphotoUrls is an array[39m
+[32m  ✓ [39m [90mResponse time under 2000ms[39m
+
+↳ [0mTC-P-002 — POST /pet — Missing required field: name[0m
+  [90mPOST[39m [90mhttps://petstore.swagger.io/v2/pet[39m [90m[200 OK, 429B, 274ms][39m
+[31m[1m  1.[22m[39m [31m[1mMissing name is rejected — 400 or 405[22m[39m
+[32m  ✓ [39m [90mServer does not crash on missing required field[39m
+
+↳ [0mTC-P-003 — POST /pet — Invalid status enum value[0m
+  [90mPOST[39m [90mhttps://petstore.swagger.io/v2/pet[39m [90m[200 OK, 454B, 304ms][39m
+[31m[1m  2.[22m[39m [31m[1mInvalid enum value is rejected — 400 or 405[22m[39m
+[32m  ✓ [39m [90mServer does not crash on invalid enum[39m
+
+↳ [0mTC-P-004 — POST /pet — No auth token[0m
+  [90mPOST[39m [90mhttps://petstore.swagger.io/v2/pet[39m [90m[200 OK, 448B, 264ms][39m
+[90m  ┌[39m
+[90m[39m[90m  [90m│[90m [90m'Actual status without auth:'[90m[37m, [90m[3[39m
+[90m  [90m│[90m 3m200[90m[39m
+[90m[39m[90m  └[39m
+[90m[39m[32m  ✓ [39m [90mRequest without auth is rejected or noted[39m
+[33m  ┌[39m
+[33m[39m[90m  [33m│[90m [90m'WARNING: Unauthenticated POST /pet returned 200 [39m
+[90m  [33m│[90m — auth not enforced!'[90m[39m
+[90m[39m[33m  └[39m
+[33m[39m[32m  ✓ [39m [90mSECURITY: Unauthenticated access should return 401 or 403[39m
+
+↳ [0mTC-P-005 — POST /pet — Extra unknown keys (mass assignment check)[0m
+  [90mPOST[39m [90mhttps://petstore.swagger.io/v2/pet[39m [90m[200 OK, 450B, 264ms][39m
+[32m  ✓ [39m [90mExtra keys do not cause server error[39m
+[32m  ✓ [39m [90mSECURITY: adminFlag not reflected in response[39m
+[32m  ✓ [39m [90mSECURITY: secretScore not reflected in response[39m
+
+↳ [0mTC-P-006 — GET /pet/{id} — Valid pet + full schema check[0m
+  [90mGET[39m [90mhttps://petstore.swagger.io/v2/pet/9118481[39m [90m[200 OK, 492B, 239ms][39m
+[32m  ✓ [39m [90mStatus is 200[39m
+[32m  ✓ [39m [90mResponse has all required fields[39m
+[32m  ✓ [39m [90mid is a number not a string[39m
+[32m  ✓ [39m [90mphotoUrls is an array[39m
+[32m  ✓ [39m [90mstatus is a valid enum value[39m
+[32m  ✓ [39m [90mResponse time under 1000ms[39m
+
+↳ [0mTC-P-007 — GET /pet/{id} — Non-existent pet ID[0m
+  [90mGET[39m [90mhttps://petstore.swagger.io/v2/pet/999999999[39m [90m[404 Not Found, 384B, 311ms][39m
+[32m  ✓ [39m [90mNon-existent pet returns 404[39m
+
+↳ [0mTC-P-008 — GET /pet/{id} — String ID 'abc' (wrong type)[0m
+  [90mGET[39m [90mhttps://petstore.swagger.io/v2/pet/abc[39m [90m[404 Not Found, 433B, 355ms][39m
+[32m  ✓ [39m [90mString petId does not crash the server[39m
+[32m  ✓ [39m [90mString petId returns 400 or 404[39m
+
+↳ [0mTC-P-009 — GET /pet/{id} — Negative ID[0m
+  [90mGET[39m [90mhttps://petstore.swagger.io/v2/pet/-1[39m [90m[404 Not Found, 384B, 296ms][39m
+[32m  ✓ [39m [90mNegative petId does not crash server[39m
+[32m  ✓ [39m [90mNegative petId returns 400 or 404[39m
+
+↳ [0mTC-P-010 — GET /pet/{id} — SQL injection in path param[0m
+  [90mGET[39m [90mhttps://petstore.swagger.io/v2/pet/1 OR 1=1[39m [90m[404 Not Found, 438B, 288ms][39m
+[32m  ✓ [39m [90mSQL injection does not crash server[39m
+[32m  ✓ [39m [90mSQL injection does not return data — 400 or 404[39m
+
+↳ [0mTC-P-011 — PUT /pet — Update name and status[0m
+  [90mPUT[39m [90mhttps://petstore.swagger.io/v2/pet[39m [90m[200 OK, 437B, 240ms][39m
+[32m  ✓ [39m [90mUpdate returns 200[39m
+[32m  ✓ [39m [90mName is updated to BrunoUpdated[39m
+[32m  ✓ [39m [90mStatus is updated to pending[39m
+
+↳ [0mTC-P-012 — PUT /pet — Extra keys (mass assignment check)[0m
+  [90mPUT[39m [90mhttps://petstore.swagger.io/v2/pet[39m [90m[200 OK, 439B, 354ms][39m
+[32m  ✓ [39m [90mUpdate with extra keys returns 200[39m
+[32m  ✓ [39m [90mSECURITY: adminOverride not in response[39m
+
+↳ [0mTC-P-013 — GET /pet/findByStatus — Valid: available[0m
+  [90mGET[39m [90mhttps://petstore.swagger.io/v2/pet/findByStatus?status=available[39m [90m[200 OK, 111.43kB, 2.3s][39m
+[32m  ✓ [39m [90mStatus is 200[39m
+[32m  ✓ [39m [90mResponse is an array[39m
+[32m  ✓ [39m [90mEvery returned pet has status available[39m
+[31m[1m  3.[22m[39m [31m[1mEvery pet has id and name fields[22m[39m
+
+↳ [0mTC-P-014 — GET /pet/findByStatus — Invalid enum value[0m
+  [90mGET[39m [90mhttps://petstore.swagger.io/v2/pet/findByStatus?status=discontinued[39m [90m[200 OK, 328B, 368ms][39m
+[31m[1m  4.[22m[39m [31m[1mInvalid status value returns 400[22m[39m
+
+↳ [0mTC-P-015 — GET /pet/findByStatus — SQL injection in query param[0m
+  [90mGET[39m [90mhttps://petstore.swagger.io/v2/pet/findByStatus?status=available' OR '1'='1[39m [90m[200 OK, 328B, 265ms][39m
+[32m  ✓ [39m [90mSQL injection in query param does not crash server[39m
+
+↳ [0mTC-P-016 — DELETE /pet/{id} — Valid delete[0m
+  [90mDELETE[39m [90mhttps://petstore.swagger.io/v2/pet/9118481[39m [90m[200 OK, 375B, 305ms][39m
+[32m  ✓ [39m [90mDelete returns 200[39m
+
+↳ [0mTC-P-017 — DELETE /pet/{id} — Already deleted (idempotency check)[0m
+  [90mDELETE[39m [90mhttps://petstore.swagger.io/v2/pet/9118481[39m [90m[404 Not Found, 292B, 291ms][39m
+[32m  ✓ [39m [90mSecond delete returns 404 not 500 — idempotency[39m
+
+↳ [0mTC-P-018 — DELETE /pet/{id} — No auth token[0m
+  [90mDELETE[39m [90mhttps://petstore.swagger.io/v2/pet/99999[39m [90m[200 OK, 373B, 282ms][39m
+[90m  ┌[39m
+[90m[39m[90m  [90m│[90m [90m'Actual status without auth on DELETE:'[90m[37m[39m
+[90m  [90m│[90m , [90m[33m200[90m[39m
+[90m[39m[90m  └[39m
+[90m[39m[32m  ✓ [39m [90mDelete without auth is rejected or noted[39m
+
+❏ [0m2 — Store Module[0m
+↳ [0mTC-ST-001 — GET /store/inventory — Valid + type validation[0m
+  [90mGET[39m [90mhttps://petstore.swagger.io/v2/store/inventory[39m [90m[200 OK, 451B, 289ms][39m
+[32m  ✓ [39m [90mStatus is 200[39m
+[32m  ✓ [39m [90mResponse is an object[39m
+[32m  ✓ [39m [90mAll inventory values are numbers not strings[39m
+[32m  ✓ [39m [90mResponse time under 1000ms[39m
+
+↳ [0mTC-ST-002 — POST /store/order — Happy path[0m
+  [90mPOST[39m [90mhttps://petstore.swagger.io/v2/store/order[39m [90m[200 OK, 438B, 287ms][39m
+[32m  ✓ [39m [90mStatus is 200[39m
+[32m  ✓ [39m [90mOrder status is placed[39m
+[32m  ✓ [39m [90mpetId matches request[39m
+[32m  ✓ [39m [90mquantity is a number[39m
+[32m  ✓ [39m [90mcomplete is a boolean[39m
+
+↳ [0mTC-ST-003 — POST /store/order — Negative quantity[0m
+  [90mPOST[39m [90mhttps://petstore.swagger.io/v2/store/order[39m [90m[200 OK, 411B, 289ms][39m
+[32m  ✓ [39m [90mNegative quantity does not crash server[39m
+[90m  ┌[39m
+[90m[39m[90m  [90m│[90m [90m'Negative quantity response status:'[90m[37m, [39m
+[90m  [90m│[90m [39m[33m200[90m[39m
+[90m[39m[90m  [90m│[90m [90m'Expected: 400. If 200, validation gap found.'[3[39m
+[90m  [90m│[90m 9m[39m
+[90m[39m[90m  └[39m
+[90m[39m[32m  ✓ [39m [90mLog actual behavior for negative quantity[39m
+
+↳ [0mTC-ST-004 — POST /store/order — Invalid shipDate format[0m
+  [90mPOST[39m [90mhttps://petstore.swagger.io/v2/store/order[39m [90m[500 Server Error, 400B, 288ms][39m
+[31m[1m  5.[22m[39m [31m[1mInvalid date format does not crash server[22m[39m
+[90m  ┌[39m
+[90m[39m[90m  [90m│[90m [90m'Invalid date response status:'[90m[37m, [90m[39m
+[90m  [90m│[90m [33m500[90m[39m
+[90m[39m[90m  [90m│[90m [90m'Expected: 400. If 200, date validation gap found[39m
+[90m  [90m│[90m .'[90m[39m
+[90m[39m[90m  └[39m
+[90m[39m[32m  ✓ [39m [90mLog actual behavior for invalid date[39m
+
+↳ [0mTC-ST-005 — POST /store/order — Extra keys (mass assignment check)[0m
+  [90mPOST[39m [90mhttps://petstore.swagger.io/v2/store/order[39m [90m[200 OK, 410B, 234ms][39m
+[32m  ✓ [39m [90mOrder with extra keys returns 200[39m
+[32m  ✓ [39m [90mSECURITY: bypassPayment not in response[39m
+[32m  ✓ [39m [90mSECURITY: discount not in response[39m
+
+↳ [0mTC-ST-006 — GET /store/order/{id} — orderId 11 (above max of 10)[0m
+  [90mGET[39m [90mhttps://petstore.swagger.io/v2/store/order/11[39m [90m[404 Not Found, 386B, 350ms][39m
+[31m[1m  6.[22m[39m [31m[1morderId above max (11) returns 400[22m[39m
+
+↳ [0mTC-ST-007 — GET /store/order/{id} — Boundary: orderId = 1[0m
+  [90mGET[39m [90mhttps://petstore.swagger.io/v2/store/order/1[39m [90m[404 Not Found, 386B, 309ms][39m
+[32m  ✓ [39m [90mBoundary orderId 1 returns 200 or 404 (not 500)[39m
+
+↳ [0mTC-ST-008 — GET /store/order/{id} — Negative orderId[0m
+  [90mGET[39m [90mhttps://petstore.swagger.io/v2/store/order/-1[39m [90m[404 Not Found, 386B, 250ms][39m
+[31m[1m  7.[22m[39m [31m[1mNegative orderId returns 400[22m[39m
+[32m  ✓ [39m [90mServer does not crash on negative orderId[39m
+
+❏ [0m3 — User Module[0m
+↳ [0mTC-U-001 — POST /user — Create user (happy path)[0m
+  [90mPOST[39m [90mhttps://petstore.swagger.io/v2/user[39m [90m[200 OK, 374B, 244ms][39m
+[32m  ✓ [39m [90mStatus is 200[39m
+[32m  ✓ [39m [90mResponse body is present[39m
+
+↳ [0mTC-U-002 — POST /user — Extra keys (mass assignment check)[0m
+  [90mPOST[39m [90mhttps://petstore.swagger.io/v2/user[39m [90m[200 OK, 387B, 352ms][39m
+[32m  ✓ [39m [90mUser creation with extra keys returns 200[39m
+[90m  ┌[39m
+[90m[39m[90m  [90m│[90m [90m'Extra keys test status:'[90m[37m, [90m[33m20[39m
+[90m  [90m│[90m 0[90m[39m
+[90m[39m[90m  [90m│[90m [90m'Check: isAdmin and role must not appear in respo[39m
+[90m  [90m│[90m nse'[90m[39m
+[90m[39m[90m  └[39m
+[90m[39m[32m  ✓ [39m [90mSECURITY: Log warning if extra keys are reflected[39m
+
+↳ [0mTC-U-003 — GET /user/login — Valid credentials + header check[0m
+  [90mGET[39m [90mhttps://petstore.swagger.io/v2/user/login?username=user1&password=user1[39m [90m[200 OK, 471B, 288ms][39m
+[32m  ✓ [39m [90mStatus is 200[39m
+[32m  ✓ [39m [90mX-Rate-Limit header is present[39m
+[32m  ✓ [39m [90mX-Expires-After header is present[39m
+[32m  ✓ [39m [90mResponse body is a session string (not empty)[39m
+
+↳ [0mTC-U-004 — GET /user/login — Wrong password[0m
+  [90mGET[39m [90mhttps://petstore.swagger.io/v2/user/login?username=user1&password=wrongpassword999[39m [90m[200 OK, 471B, 264ms][39m
+[31m[1m  8.[22m[39m [31m[1mWrong password returns 400[22m[39m
+[32m  ✓ [39m [90mSECURITY: Error message does not reveal if username exists[39m
+
+↳ [0mTC-U-005 — GET /user/login — Missing username param[0m
+  [90mGET[39m [90mhttps://petstore.swagger.io/v2/user/login?password=pass123[39m [90m[200 OK, 471B, 286ms][39m
+[31m[1m  9.[22m[39m [31m[1mMissing username param returns 400[22m[39m
+
+↳ [0mTC-U-006 — GET /user/login — SQL injection in username[0m
+  [90mGET[39m [90mhttps://petstore.swagger.io/v2/user/login?username=admin'--&password=anything[39m [90m[200 OK, 471B, 346ms][39m
+[31m[1m 10.[22m[39m [31m[1mSQL injection in login does not return 200[22m[39m
+[32m  ✓ [39m [90mSQL injection does not crash server[39m
+
+↳ [0mTC-U-007 — GET /user/{username} — Valid + password not in response[0m
+  [90mGET[39m [90mhttps://petstore.swagger.io/v2/user/qatest_390501[39m [90m[200 OK, 499B, 378ms][39m
+[32m  ✓ [39m [90mStatus is 200[39m
+[32m  ✓ [39m [90mUsername field is present[39m
+[31m[1m 11.[22m[39m [31m[1mSECURITY: Password is not returned in plain text[22m[39m
+[32m  ✓ [39m [90mResponse has id and username[39m
+
+↳ [0mTC-U-008 — GET /user/{username} — Non-existent username[0m
+  [90mGET[39m [90mhttps://petstore.swagger.io/v2/user/ghost_user_xyz_does_not_exist[39m [90m[404 Not Found, 385B, 284ms][39m
+[32m  ✓ [39m [90mNon-existent user returns 404[39m
+
+↳ [0mTC-U-009 — GET /user/{username} — SQL injection in path[0m
+  [90mGET[39m [90mhttps://petstore.swagger.io/v2/user/user1' OR '1'='1[39m [90m[404 Not Found, 385B, 430ms][39m
+[32m  ✓ [39m [90mSQL injection in user path does not crash server[39m
+[32m  ✓ [39m [90mSQL injection does not return data[39m
+
+↳ [0mTC-U-010 — DELETE /user/{username} — Valid delete[0m
+  [90mDELETE[39m [90mhttps://petstore.swagger.io/v2/user/qatest_390501[39m [90m[200 OK, 381B, 315ms][39m
+[32m  ✓ [39m [90mDelete returns 200[39m
+
+↳ [0mTC-U-011 — DELETE /user/{username} — Already deleted (idempotency)[0m
+  [90mDELETE[39m [90mhttps://petstore.swagger.io/v2/user/qatest_390501[39m [90m[404 Not Found, 292B, 381ms][39m
+[32m  ✓ [39m [90mSecond delete returns 404 not 500[39m
+
+[90m┌─────────────────────────[39m[90m┬────────────────────[39m[90m┬────────────────────┐[39m
+[90m│[39m                         [90m│[39m           executed [90m│[39m             failed [90m│[39m
+[90m├─────────────────────────[39m[90m┼────────────────────[39m[90m┼────────────────────┤[39m
+[90m│[39m              [32miterations[39m [90m│[39m                  1 [90m│[39m                  0 [90m│[39m
+[90m├─────────────────────────[39m[90m┼────────────────────[39m[90m┼────────────────────┤[39m
+[90m│[39m                [32mrequests[39m [90m│[39m                 39 [90m│[39m                  0 [90m│[39m
+[90m├─────────────────────────[39m[90m┼────────────────────[39m[90m┼────────────────────┤[39m
+[90m│[39m            [32mtest-scripts[39m [90m│[39m                 39 [90m│[39m                  0 [90m│[39m
+[90m├─────────────────────────[39m[90m┼────────────────────[39m[90m┼────────────────────┤[39m
+[90m│[39m      [32mprerequest-scripts[39m [90m│[39m                 42 [90m│[39m                  0 [90m│[39m
+[90m├─────────────────────────[39m[90m┼────────────────────[39m[90m┼────────────────────┤[39m
+[90m│[39m              [31massertions[39m [90m│[39m                 88 [90m│[39m                 [31m11[39m [90m│[39m
+[90m├─────────────────────────┴────────────────────┴────────────────────┤[39m
+[90m│[39m total run duration: 27.4s                                         [90m│[39m
+[90m├───────────────────────────────────────────────────────────────────┤[39m
+[90m│[39m total data received: 114.2kB (approx)                             [90m│[39m
+[90m├───────────────────────────────────────────────────────────────────┤[39m
+[90m│[39m average response time: 378ms [min: 234ms, max: 2.3s, s.d.: 356ms] [90m│[39m
+[90m└───────────────────────────────────────────────────────────────────┘[39m
+
+[31m   [31m[4m#[24m[31m [39m[31m [31m[4mfailure[24m[31m        [39m[31m [31m[4mdetail[24m[31m                                                                                        [39m
+[90m     [39m[90m                [39m[90m                                                                                               [39m
+ 01.  AssertionError  Missing name is rejected — 400 or 405                                                         
+                      [90mexpected 200 to be one of [ 400, 405 ][39m                                                        
+                      [90mat assertion:0 in test-script[39m[90m[39m                                                                 
+                      [90minside "1 — Pet Module / TC-P-002 — POST /pet — Missing required field: name"[39m                 
+[90m     [39m[90m                [39m[90m                                                                                               [39m
+ 02.  AssertionError  Invalid enum value is rejected — 400 or 405                                                   
+                      [90mexpected 200 to be one of [ 400, 405 ][39m                                                        
+                      [90mat assertion:0 in test-script[39m[90m[39m                                                                 
+                      [90minside "1 — Pet Module / TC-P-003 — POST /pet — Invalid status enum value"[39m                    
+[90m     [39m[90m                [39m[90m                                                                                               [39m
+ 03.  AssertionError  Every pet has id and name fields                                                              
+                      [90mexpected { id: 1778880895997, …(4) } to have property 'name'[39m                                  
+                      [90mat assertion:3 in test-script[39m[90m[39m                                                                 
+                      [90minside "1 — Pet Module / TC-P-013 — GET /pet/findByStatus — Valid: available"[39m                 
+[90m     [39m[90m                [39m[90m                                                                                               [39m
+ 04.  AssertionError  Invalid status value returns 400                                                              
+                      [90mexpected response to have status code 400 but got 200[39m                                         
+                      [90mat assertion:0 in test-script[39m[90m[39m                                                                 
+                      [90minside "1 — Pet Module / TC-P-014 — GET /pet/findByStatus — Invalid enum value"[39m               
+[90m     [39m[90m                [39m[90m                                                                                               [39m
+ 05.  AssertionError  Invalid date format does not crash server                                                     
+                      [90mexpected 500 to not deeply equal 500[39m                                                          
+                      [90mat assertion:0 in test-script[39m[90m[39m                                                                 
+                      [90minside "2 — Store Module / TC-ST-004 — POST /store/order — Invalid shipDate format"[39m           
+[90m     [39m[90m                [39m[90m                                                                                               [39m
+ 06.  AssertionError  orderId above max (11) returns 400                                                            
+                      [90mexpected response to have status code 400 but got 404[39m                                         
+                      [90mat assertion:0 in test-script[39m[90m[39m                                                                 
+                      [90minside "2 — Store Module / TC-ST-006 — GET /store/order/{id} — orderId 11 (above max of 10)"[39m  
+[90m     [39m[90m                [39m[90m                                                                                               [39m
+ 07.  AssertionError  Negative orderId returns 400                                                                  
+                      [90mexpected response to have status code 400 but got 404[39m                                         
+                      [90mat assertion:0 in test-script[39m[90m[39m                                                                 
+                      [90minside "2 — Store Module / TC-ST-008 — GET /store/order/{id} — Negative orderId"[39m              
+[90m     [39m[90m                [39m[90m                                                                                               [39m
+ 08.  AssertionError  Wrong password returns 400                                                                    
+                      [90mexpected response to have status code 400 but got 200[39m                                         
+                      [90mat assertion:0 in test-script[39m[90m[39m                                                                 
+                      [90minside "3 — User Module / TC-U-004 — GET /user/login — Wrong password"[39m                        
+[90m     [39m[90m                [39m[90m                                                                                               [39m
+ 09.  AssertionError  Missing username param returns 400                                                            
+                      [90mexpected response to have status code 400 but got 200[39m                                         
+                      [90mat assertion:0 in test-script[39m[90m[39m                                                                 
+                      [90minside "3 — User Module / TC-U-005 — GET /user/login — Missing username param"[39m                
+[90m     [39m[90m                [39m[90m                                                                                               [39m
+ 10.  AssertionError  SQL injection in login does not return 200                                                    
+                      [90mexpected 200 to not deeply equal 200[39m                                                          
+                      [90mat assertion:0 in test-script[39m[90m[39m                                                                 
+                      [90minside "3 — User Module / TC-U-006 — GET /user/login — SQL injection in username"[39m             
+[90m     [39m[90m                [39m[90m                                                                                               [39m
+ 11.  AssertionError  SECURITY: Password is not returned in plain text                                              
+                      [90mexpected 'SecurePass@123' to be one of [ null, '', '[REDACTED]' ][39m                             
+                      [90mat assertion:2 in test-script[39m[90m[39m                                                                 
+                      [90minside "3 — User Module / TC-U-007 — GET /user/{username} — Valid + password not in response"[39m 

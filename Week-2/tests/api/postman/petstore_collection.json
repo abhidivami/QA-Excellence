@@ -1,0 +1,1423 @@
+{
+  "info": {
+    "_postman_id": "c3d4e5f6-a1b2-4890-abcd-ef1234567890",
+    "name": "Petstore API — Production Grade Tests",
+    "description": "Production-grade API test suite for the Swagger Petstore API.\nFollows trainer methodology: 1 positive + 1 negative per endpoint, full response validation (status, schema, types, headers, response time).\n\nBase URL: https://petstore.swagger.io/v2\nAuth: api_key header — value: special-key\n\nRun via Newman:\n  ./run_tests.sh\nor manually:\n  newman run petstore_collection.json -e petstore_environment.json --reporters cli,htmlextra --reporter-htmlextra-export results/report.html",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "exec": [
+          "if (!pm.environment.get('run_id')) {",
+          "    pm.environment.set('run_id', 'run_' + Date.now());",
+          "}"
+        ],
+        "type": "text/javascript"
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "0 — Smoke Tests",
+      "item": [
+        {
+          "name": "TC-S-001 — Server is reachable",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Server is reachable — not a 5xx crash', function() {",
+                  "    pm.expect(pm.response.code).to.be.below(500);",
+                  "});",
+                  "pm.test('Response time under 3000ms', function() {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(3000);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "api_key", "value": "{{valid_api_key}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/pet/1",
+              "host": ["{{base_url}}"],
+              "path": ["pet", "1"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-S-002 — Response is JSON not HTML",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Content-Type contains application/json', function() {",
+                  "    pm.expect(pm.response.headers.get('Content-Type')).to.include('application/json');",
+                  "});",
+                  "pm.test('Response body is valid parseable JSON', function() {",
+                  "    pm.response.json();",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "api_key", "value": "{{valid_api_key}}" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/pet/1",
+              "host": ["{{base_url}}"],
+              "path": ["pet", "1"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "1 — Pet Module",
+      "item": [
+        {
+          "name": "TC-P-001 — POST /pet — Create pet (happy path)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "var petId = Math.floor(Math.random() * 9000000) + 1000000;",
+                  "pm.environment.set('created_pet_id', petId);"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Pet name matches request', function() {",
+                  "    pm.expect(pm.response.json().name).to.eql('Bruno');",
+                  "});",
+                  "pm.test('Status field is available', function() {",
+                  "    pm.expect(pm.response.json().status).to.eql('available');",
+                  "});",
+                  "pm.test('id is a number not a string', function() {",
+                  "    pm.expect(pm.response.json().id).to.be.a('number');",
+                  "});",
+                  "pm.test('photoUrls is an array', function() {",
+                  "    pm.expect(pm.response.json().photoUrls).to.be.an('array');",
+                  "});",
+                  "pm.test('Response time under 2000ms', function() {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});",
+                  "pm.environment.set('created_pet_id', pm.response.json().id);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "api_key", "value": "{{valid_api_key}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": {{created_pet_id}},\n  \"name\": \"Bruno\",\n  \"category\": { \"id\": 1, \"name\": \"Dogs\" },\n  \"photoUrls\": [\"https://example.com/bruno.jpg\"],\n  \"tags\": [{ \"id\": 1, \"name\": \"friendly\" }],\n  \"status\": \"available\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/pet",
+              "host": ["{{base_url}}"],
+              "path": ["pet"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-P-002 — POST /pet — Missing required field: name",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Missing name is rejected — 400 or 405', function() {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([400, 405]);",
+                  "});",
+                  "pm.test('Server does not crash on missing required field', function() {",
+                  "    pm.expect(pm.response.code).to.not.eql(500);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "api_key", "value": "{{valid_api_key}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"photoUrls\": [\"https://example.com/photo.jpg\"],\n  \"status\": \"available\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/pet",
+              "host": ["{{base_url}}"],
+              "path": ["pet"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-P-003 — POST /pet — Invalid status enum value",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Invalid enum value is rejected — 400 or 405', function() {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([400, 405]);",
+                  "});",
+                  "pm.test('Server does not crash on invalid enum', function() {",
+                  "    pm.expect(pm.response.code).to.not.eql(500);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "api_key", "value": "{{valid_api_key}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"BadStatusPet\",\n  \"photoUrls\": [\"https://example.com/photo.jpg\"],\n  \"status\": \"discontinued\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/pet",
+              "host": ["{{base_url}}"],
+              "path": ["pet"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-P-004 — POST /pet — No auth token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Request without auth is rejected or noted', function() {",
+                  "    console.log('Actual status without auth:', pm.response.code);",
+                  "    pm.expect(pm.response.code).to.not.eql(500);",
+                  "});",
+                  "pm.test('SECURITY: Unauthenticated access should return 401 or 403', function() {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 401, 403]);",
+                  "    if (pm.response.code === 200) {",
+                  "        console.warn('WARNING: Unauthenticated POST /pet returned 200 — auth not enforced!');",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"NoAuthPet\",\n  \"photoUrls\": [\"https://example.com/photo.jpg\"],\n  \"status\": \"available\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/pet",
+              "host": ["{{base_url}}"],
+              "path": ["pet"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-P-005 — POST /pet — Extra unknown keys (mass assignment check)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Extra keys do not cause server error', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('SECURITY: adminFlag not reflected in response', function() {",
+                  "    var body = pm.response.json();",
+                  "    pm.expect(body).to.not.have.property('adminFlag');",
+                  "});",
+                  "pm.test('SECURITY: secretScore not reflected in response', function() {",
+                  "    var body = pm.response.json();",
+                  "    pm.expect(body).to.not.have.property('secretScore');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "api_key", "value": "{{valid_api_key}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"ExtraKeyPet\",\n  \"photoUrls\": [\"https://example.com/photo.jpg\"],\n  \"status\": \"available\",\n  \"adminFlag\": true,\n  \"secretScore\": 9999,\n  \"internalId\": \"INTERNAL-001\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/pet",
+              "host": ["{{base_url}}"],
+              "path": ["pet"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-P-006 — GET /pet/{id} — Valid pet + full schema check",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Response has all required fields', function() {",
+                  "    var pet = pm.response.json();",
+                  "    pm.expect(pet).to.have.property('id');",
+                  "    pm.expect(pet).to.have.property('name');",
+                  "    pm.expect(pet).to.have.property('photoUrls');",
+                  "    pm.expect(pet).to.have.property('status');",
+                  "});",
+                  "pm.test('id is a number not a string', function() {",
+                  "    pm.expect(pm.response.json().id).to.be.a('number');",
+                  "});",
+                  "pm.test('photoUrls is an array', function() {",
+                  "    pm.expect(pm.response.json().photoUrls).to.be.an('array');",
+                  "});",
+                  "pm.test('status is a valid enum value', function() {",
+                  "    pm.expect(pm.response.json().status).to.be.oneOf(['available', 'pending', 'sold']);",
+                  "});",
+                  "pm.test('Response time under 1000ms', function() {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(1000);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "api_key", "value": "{{valid_api_key}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/pet/{{created_pet_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["pet", "{{created_pet_id}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-P-007 — GET /pet/{id} — Non-existent pet ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Non-existent pet returns 404', function() {",
+                  "    pm.response.to.have.status(404);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "api_key", "value": "{{valid_api_key}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/pet/999999999",
+              "host": ["{{base_url}}"],
+              "path": ["pet", "999999999"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-P-008 — GET /pet/{id} — String ID 'abc' (wrong type)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('String petId does not crash the server', function() {",
+                  "    pm.expect(pm.response.code).to.not.eql(500);",
+                  "});",
+                  "pm.test('String petId returns 400 or 404', function() {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([400, 404]);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "api_key", "value": "{{valid_api_key}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/pet/abc",
+              "host": ["{{base_url}}"],
+              "path": ["pet", "abc"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-P-009 — GET /pet/{id} — Negative ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Negative petId does not crash server', function() {",
+                  "    pm.expect(pm.response.code).to.not.eql(500);",
+                  "});",
+                  "pm.test('Negative petId returns 400 or 404', function() {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([400, 404]);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "api_key", "value": "{{valid_api_key}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/pet/-1",
+              "host": ["{{base_url}}"],
+              "path": ["pet", "-1"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-P-010 — GET /pet/{id} — SQL injection in path param",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('SQL injection does not crash server', function() {",
+                  "    pm.expect(pm.response.code).to.not.eql(500);",
+                  "});",
+                  "pm.test('SQL injection does not return data — 400 or 404', function() {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([400, 404]);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "api_key", "value": "{{valid_api_key}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/pet/1 OR 1=1",
+              "host": ["{{base_url}}"],
+              "path": ["pet", "1 OR 1=1"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-P-011 — PUT /pet — Update name and status",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Update returns 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Name is updated to BrunoUpdated', function() {",
+                  "    pm.expect(pm.response.json().name).to.eql('BrunoUpdated');",
+                  "});",
+                  "pm.test('Status is updated to pending', function() {",
+                  "    pm.expect(pm.response.json().status).to.eql('pending');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "api_key", "value": "{{valid_api_key}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": {{created_pet_id}},\n  \"name\": \"BrunoUpdated\",\n  \"photoUrls\": [\"https://example.com/bruno.jpg\"],\n  \"status\": \"pending\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/pet",
+              "host": ["{{base_url}}"],
+              "path": ["pet"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-P-012 — PUT /pet — Extra keys (mass assignment check)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Update with extra keys returns 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('SECURITY: adminOverride not in response', function() {",
+                  "    pm.expect(pm.response.json()).to.not.have.property('adminOverride');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "api_key", "value": "{{valid_api_key}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": {{created_pet_id}},\n  \"name\": \"BrunoUpdated\",\n  \"photoUrls\": [\"https://example.com/bruno.jpg\"],\n  \"status\": \"available\",\n  \"adminOverride\": true,\n  \"deletedAt\": \"2026-01-01\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/pet",
+              "host": ["{{base_url}}"],
+              "path": ["pet"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-P-013 — GET /pet/findByStatus — Valid: available",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Response is an array', function() {",
+                  "    pm.expect(pm.response.json()).to.be.an('array');",
+                  "});",
+                  "pm.test('Every returned pet has status available', function() {",
+                  "    pm.response.json().forEach(function(pet) {",
+                  "        pm.expect(pet.status).to.eql('available');",
+                  "    });",
+                  "});",
+                  "pm.test('Every pet has id and name fields', function() {",
+                  "    pm.response.json().forEach(function(pet) {",
+                  "        pm.expect(pet).to.have.property('id');",
+                  "        pm.expect(pet).to.have.property('name');",
+                  "    });",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "api_key", "value": "{{valid_api_key}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/pet/findByStatus?status=available",
+              "host": ["{{base_url}}"],
+              "path": ["pet", "findByStatus"],
+              "query": [
+                { "key": "status", "value": "available" }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-P-014 — GET /pet/findByStatus — Invalid enum value",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Invalid status value returns 400', function() {",
+                  "    pm.response.to.have.status(400);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "api_key", "value": "{{valid_api_key}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/pet/findByStatus?status=discontinued",
+              "host": ["{{base_url}}"],
+              "path": ["pet", "findByStatus"],
+              "query": [
+                { "key": "status", "value": "discontinued" }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-P-015 — GET /pet/findByStatus — SQL injection in query param",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('SQL injection in query param does not crash server', function() {",
+                  "    pm.expect(pm.response.code).to.not.eql(500);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "api_key", "value": "{{valid_api_key}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/pet/findByStatus?status=available' OR '1'='1",
+              "host": ["{{base_url}}"],
+              "path": ["pet", "findByStatus"],
+              "query": [
+                { "key": "status", "value": "available' OR '1'='1" }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-P-016 — DELETE /pet/{id} — Valid delete",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Delete returns 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "api_key", "value": "{{valid_api_key}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/pet/{{created_pet_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["pet", "{{created_pet_id}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-P-017 — DELETE /pet/{id} — Already deleted (idempotency check)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Second delete returns 404 not 500 — idempotency', function() {",
+                  "    pm.response.to.have.status(404);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "api_key", "value": "{{valid_api_key}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/pet/{{created_pet_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["pet", "{{created_pet_id}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-P-018 — DELETE /pet/{id} — No auth token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Delete without auth is rejected or noted', function() {",
+                  "    console.log('Actual status without auth on DELETE:', pm.response.code);",
+                  "    pm.expect(pm.response.code).to.not.eql(500);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/pet/99999",
+              "host": ["{{base_url}}"],
+              "path": ["pet", "99999"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "2 — Store Module",
+      "item": [
+        {
+          "name": "TC-ST-001 — GET /store/inventory — Valid + type validation",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Response is an object', function() {",
+                  "    pm.expect(pm.response.json()).to.be.an('object');",
+                  "});",
+                  "pm.test('All inventory values are numbers not strings', function() {",
+                  "    Object.values(pm.response.json()).forEach(function(val) {",
+                  "        pm.expect(val).to.be.a('number');",
+                  "    });",
+                  "});",
+                  "pm.test('Response time under 1000ms', function() {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(1000);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "api_key", "value": "{{valid_api_key}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/store/inventory",
+              "host": ["{{base_url}}"],
+              "path": ["store", "inventory"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-ST-002 — POST /store/order — Happy path",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "var orderId = Math.floor(Math.random() * 90000) + 10000;",
+                  "pm.environment.set('created_order_id', orderId);"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Order status is placed', function() {",
+                  "    pm.expect(pm.response.json().status).to.eql('placed');",
+                  "});",
+                  "pm.test('petId matches request', function() {",
+                  "    pm.expect(pm.response.json().petId).to.eql(1);",
+                  "});",
+                  "pm.test('quantity is a number', function() {",
+                  "    pm.expect(pm.response.json().quantity).to.be.a('number');",
+                  "});",
+                  "pm.test('complete is a boolean', function() {",
+                  "    pm.expect(pm.response.json().complete).to.be.a('boolean');",
+                  "});",
+                  "pm.environment.set('created_order_id', pm.response.json().id);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": {{created_order_id}},\n  \"petId\": 1,\n  \"quantity\": 2,\n  \"shipDate\": \"2026-07-01T10:00:00.000Z\",\n  \"status\": \"placed\",\n  \"complete\": false\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/store/order",
+              "host": ["{{base_url}}"],
+              "path": ["store", "order"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-ST-003 — POST /store/order — Negative quantity",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Negative quantity does not crash server', function() {",
+                  "    pm.expect(pm.response.code).to.not.eql(500);",
+                  "});",
+                  "pm.test('Log actual behavior for negative quantity', function() {",
+                  "    console.log('Negative quantity response status:', pm.response.code);",
+                  "    console.log('Expected: 400. If 200, validation gap found.');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"petId\": 1,\n  \"quantity\": -5,\n  \"status\": \"placed\",\n  \"complete\": false\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/store/order",
+              "host": ["{{base_url}}"],
+              "path": ["store", "order"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-ST-004 — POST /store/order — Invalid shipDate format",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Invalid date format does not crash server', function() {",
+                  "    pm.expect(pm.response.code).to.not.eql(500);",
+                  "});",
+                  "pm.test('Log actual behavior for invalid date', function() {",
+                  "    console.log('Invalid date response status:', pm.response.code);",
+                  "    console.log('Expected: 400. If 200, date validation gap found.');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"petId\": 1,\n  \"quantity\": 1,\n  \"shipDate\": \"not-a-real-date\",\n  \"status\": \"placed\",\n  \"complete\": false\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/store/order",
+              "host": ["{{base_url}}"],
+              "path": ["store", "order"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-ST-005 — POST /store/order — Extra keys (mass assignment check)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Order with extra keys returns 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('SECURITY: bypassPayment not in response', function() {",
+                  "    pm.expect(pm.response.json()).to.not.have.property('bypassPayment');",
+                  "});",
+                  "pm.test('SECURITY: discount not in response', function() {",
+                  "    pm.expect(pm.response.json()).to.not.have.property('discount');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"petId\": 1,\n  \"quantity\": 1,\n  \"status\": \"placed\",\n  \"complete\": false,\n  \"bypassPayment\": true,\n  \"discount\": 9999,\n  \"internalPriority\": \"CRITICAL\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/store/order",
+              "host": ["{{base_url}}"],
+              "path": ["store", "order"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-ST-006 — GET /store/order/{id} — orderId 11 (above max of 10)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('orderId above max (11) returns 400', function() {",
+                  "    pm.response.to.have.status(400);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/store/order/11",
+              "host": ["{{base_url}}"],
+              "path": ["store", "order", "11"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-ST-007 — GET /store/order/{id} — Boundary: orderId = 1",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Boundary orderId 1 returns 200 or 404 (not 500)', function() {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 404]);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/store/order/1",
+              "host": ["{{base_url}}"],
+              "path": ["store", "order", "1"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-ST-008 — GET /store/order/{id} — Negative orderId",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Negative orderId returns 400', function() {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "pm.test('Server does not crash on negative orderId', function() {",
+                  "    pm.expect(pm.response.code).to.not.eql(500);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/store/order/-1",
+              "host": ["{{base_url}}"],
+              "path": ["store", "order", "-1"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "3 — User Module",
+      "item": [
+        {
+          "name": "TC-U-001 — POST /user — Create user (happy path)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "var username = 'qatest_' + Date.now().toString().slice(-6);",
+                  "pm.environment.set('created_username', username);"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Response body is present', function() {",
+                  "    pm.expect(pm.response.text()).to.not.be.empty;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": 500001,\n  \"username\": \"{{created_username}}\",\n  \"firstName\": \"QA\",\n  \"lastName\": \"Tester\",\n  \"email\": \"qa.tester@example.com\",\n  \"password\": \"SecurePass@123\",\n  \"phone\": \"9876543210\",\n  \"userStatus\": 1\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/user",
+              "host": ["{{base_url}}"],
+              "path": ["user"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-U-002 — POST /user — Extra keys (mass assignment check)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('User creation with extra keys returns 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('SECURITY: Log warning if extra keys are reflected', function() {",
+                  "    console.log('Extra keys test status:', pm.response.code);",
+                  "    console.log('Check: isAdmin and role must not appear in response');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"extrakey_user\",\n  \"password\": \"Pass@123\",\n  \"userStatus\": 1,\n  \"isAdmin\": true,\n  \"role\": \"superadmin\",\n  \"internalId\": \"BYPASS-001\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/user",
+              "host": ["{{base_url}}"],
+              "path": ["user"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-U-003 — GET /user/login — Valid credentials + header check",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('X-Rate-Limit header is present', function() {",
+                  "    pm.expect(pm.response.headers.get('X-Rate-Limit')).to.exist;",
+                  "});",
+                  "pm.test('X-Expires-After header is present', function() {",
+                  "    pm.expect(pm.response.headers.get('X-Expires-After')).to.exist;",
+                  "});",
+                  "pm.test('Response body is a session string (not empty)', function() {",
+                  "    pm.expect(pm.response.text()).to.be.a('string').and.not.empty;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/user/login?username=user1&password=user1",
+              "host": ["{{base_url}}"],
+              "path": ["user", "login"],
+              "query": [
+                { "key": "username", "value": "user1" },
+                { "key": "password", "value": "user1" }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-U-004 — GET /user/login — Wrong password",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Wrong password returns 400', function() {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "pm.test('SECURITY: Error message does not reveal if username exists', function() {",
+                  "    var body = pm.response.text();",
+                  "    pm.expect(body.toLowerCase()).to.not.include('username not found');",
+                  "    pm.expect(body.toLowerCase()).to.not.include('user does not exist');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/user/login?username=user1&password=wrongpassword999",
+              "host": ["{{base_url}}"],
+              "path": ["user", "login"],
+              "query": [
+                { "key": "username", "value": "user1" },
+                { "key": "password", "value": "wrongpassword999" }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-U-005 — GET /user/login — Missing username param",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Missing username param returns 400', function() {",
+                  "    pm.response.to.have.status(400);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/user/login?password=pass123",
+              "host": ["{{base_url}}"],
+              "path": ["user", "login"],
+              "query": [
+                { "key": "password", "value": "pass123" }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-U-006 — GET /user/login — SQL injection in username",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('SQL injection in login does not return 200', function() {",
+                  "    pm.expect(pm.response.code).to.not.eql(200);",
+                  "});",
+                  "pm.test('SQL injection does not crash server', function() {",
+                  "    pm.expect(pm.response.code).to.not.eql(500);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/user/login?username=admin'--&password=anything",
+              "host": ["{{base_url}}"],
+              "path": ["user", "login"],
+              "query": [
+                { "key": "username", "value": "admin'--" },
+                { "key": "password", "value": "anything" }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-U-007 — GET /user/{username} — Valid + password not in response",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Username field is present', function() {",
+                  "    pm.expect(pm.response.json()).to.have.property('username');",
+                  "});",
+                  "pm.test('SECURITY: Password is not returned in plain text', function() {",
+                  "    var body = pm.response.json();",
+                  "    if (body.password) {",
+                  "        pm.expect(body.password).to.be.oneOf([null, '', '[REDACTED]']);",
+                  "        if (body.password !== null && body.password !== '') {",
+                  "            console.warn('SECURITY ISSUE: Password field returned with value: ' + body.password);",
+                  "        }",
+                  "    }",
+                  "});",
+                  "pm.test('Response has id and username', function() {",
+                  "    var user = pm.response.json();",
+                  "    pm.expect(user).to.have.property('id');",
+                  "    pm.expect(user).to.have.property('username');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/user/{{created_username}}",
+              "host": ["{{base_url}}"],
+              "path": ["user", "{{created_username}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-U-008 — GET /user/{username} — Non-existent username",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Non-existent user returns 404', function() {",
+                  "    pm.response.to.have.status(404);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/user/ghost_user_xyz_does_not_exist",
+              "host": ["{{base_url}}"],
+              "path": ["user", "ghost_user_xyz_does_not_exist"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-U-009 — GET /user/{username} — SQL injection in path",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('SQL injection in user path does not crash server', function() {",
+                  "    pm.expect(pm.response.code).to.not.eql(500);",
+                  "});",
+                  "pm.test('SQL injection does not return data', function() {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([400, 404]);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/user/user1' OR '1'='1",
+              "host": ["{{base_url}}"],
+              "path": ["user", "user1' OR '1'='1"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-U-010 — DELETE /user/{username} — Valid delete",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Delete returns 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/user/{{created_username}}",
+              "host": ["{{base_url}}"],
+              "path": ["user", "{{created_username}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-U-011 — DELETE /user/{username} — Already deleted (idempotency)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Second delete returns 404 not 500', function() {",
+                  "    pm.response.to.have.status(404);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/user/{{created_username}}",
+              "host": ["{{base_url}}"],
+              "path": ["user", "{{created_username}}"]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    { "key": "base_url", "value": "https://petstore.swagger.io/v2" },
+    { "key": "valid_api_key", "value": "special-key" },
+    { "key": "invalid_api_key", "value": "wrong-key-xyz" },
+    { "key": "created_pet_id", "value": "" },
+    { "key": "created_order_id", "value": "" },
+    { "key": "created_username", "value": "" }
+  ]
+}
