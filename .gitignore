@@ -20,6 +20,13 @@ yarn-error.log*
 # **/results/*.html  ← visible
 # **/results/*.log   ← visible
 
+# ─── Playwright ───────────────────────────────────────
+# test-results/ contains screenshots/videos — large, regeneratable
+**/test-results/
+# playwright-report/ is generated on each run — keep only the .gitkeep
+**/playwright-report/*
+!**/playwright-report/.gitkeep
+
 # ─── IDE ──────────────────────────────────────────────
 .vscode/
 .idea/
