@@ -1,0 +1,19 @@
+{
+  "name": "final-assignment-playwright-tests",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "test": "npx playwright test",
+    "test:homepage": "npx playwright test tests/homepage.spec.ts",
+    "test:search": "npx playwright test tests/search.spec.ts",
+    "test:product": "npx playwright test tests/product.spec.ts",
+    "test:cart": "npx playwright test tests/cart.spec.ts",
+    "test:checkout": "npx playwright test tests/checkout.spec.ts",
+    "report": "npx playwright show-report"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.44.0",
+    "@types/node": "^25.9.1",
+    "typescript": "^5.4.5"
+  }
+}

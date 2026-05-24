@@ -1,0 +1,44 @@
+name: Final Assignment — PrestaShop E2E Tests
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'Final-Assignment/**'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'Final-Assignment/**'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    # 3 browsers run in parallel; each takes ~15 min → 20 min ceiling is comfortable
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: Final-Assignment/tests
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Install Playwright browsers (Chromium, Firefox, WebKit)
+        run: npx playwright install --with-deps
+
+      - name: Run Playwright tests (Chromium + Firefox + WebKit)
+        run: npx playwright test
+
+      - name: Upload HTML report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: prestashop-playwright-report
+          path: Final-Assignment/tests/playwright-report/
+          retention-days: 30
